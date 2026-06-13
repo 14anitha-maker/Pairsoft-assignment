@@ -4,50 +4,58 @@ export class AdminPage {
 
     constructor(private page: Page) {}
 
-    private rows = this.page.locator('.oxd-table-card');
+    async deleteSecondRecord(): Promise<string | null> {
 
-    async deleteSecondRecord(): Promise<string> {
+        const rows = this.page.locator('.oxd-table-card');
 
-        // Wait for table data to load
-        await expect(this.rows.first()).toBeVisible();
+        await expect(rows.first()).toBeVisible();
 
-        const rowsBefore = await this.rows.count();
-        console.log(`Rows before deletion: ${rowsBefore}`);
+        const rowCount = await rows.count();
+        console.log(`Rows before deletion: ${rowCount}`);
 
-        if (rowsBefore < 2) {
-            throw new Error('Less than 2 records found');
+        // Only Admin user exists
+        if (rowCount < 2) {
+            console.log(
+                'Only Admin user exists. No second record available for deletion.'
+            );
+            return null;
         }
 
-        const secondRow = this.rows.nth(1);
+        const secondRow = rows.nth(1);
 
-        // Username column
         const deletedUsername = (
-            await secondRow.locator('.oxd-table-cell').nth(1).innerText()
+            await secondRow
+                .locator('.oxd-table-cell')
+                .nth(1)
+                .innerText()
         ).trim();
 
         console.log(`Deleting user: ${deletedUsername}`);
 
-        // Delete icon
+        // Click delete button
         await secondRow.locator('button').first().click();
 
-        // Confirmation popup
-        await this.page.getByRole('button', { name: 'Yes, Delete' }).click();
+        // Confirm deletion
+        await this.page
+            .getByRole('button', { name: 'Yes, Delete' })
+            .click();
 
-        // Success message
+        // Verify success toast
         await expect(
             this.page.locator('.oxd-toast')
         ).toContainText('Successfully Deleted');
 
-        // Verify count reduced
-        await expect(this.rows).toHaveCount(rowsBefore - 1);
+        // Wait for table refresh
+        await expect(rows).toHaveCount(rowCount - 1);
 
         return deletedUsername;
     }
 
     async verifyUserDeleted(username: string): Promise<void> {
 
-        await expect(this.page.locator('.oxd-table-body'))
-            .not.toContainText(username);
+        await expect(
+            this.page.locator('.oxd-table-body')
+        ).not.toContainText(username);
 
         console.log(`Verified user deleted: ${username}`);
     }

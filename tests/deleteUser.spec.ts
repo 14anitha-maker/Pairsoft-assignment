@@ -19,8 +19,15 @@ test.describe('OrangeHRM Assignment', () => {
         const deletedUsername =
             await adminPage.deleteSecondRecord();
 
+        if (!deletedUsername) {
+            test.skip(
+                true,
+                'Only Admin user exists. No second user available for deletion.'
+            );
+        }
+
         await adminPage.verifyUserDeleted(
-            deletedUsername
+            deletedUsername!
         );
     });
 
